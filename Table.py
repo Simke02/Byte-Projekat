@@ -1,7 +1,9 @@
+from Move import Move
+
 class Table:
     def __init__(self, size) -> None:
         self.size = size
-        self.moves = {"GL", "GD", "DL", "DD"}
+        self.moves = ["GL", "GD", "DL", "DD"]
         self.player = "H"
         self.figure = "X"
         self.Xscore = 0
@@ -23,10 +25,13 @@ class Table:
                 for z in range(9):
                     self.matrix[i][j][z] = "."
                 if(i > 0 and i < self.size - 1):
+                #if(i > 1 and i < self.size - 1):
                     self.matrix[i][j][0] = figure 
                 j += 2
         self.figures_count = (self.size - 2) * (self.size / 2)
         self.maxStack = self.figures_count / 8
+
+        #self.matrix[0][2][0] = figure 
     
     def draw_table(self):
         print("  ", end=" ")
@@ -72,21 +77,20 @@ class Table:
         if(len(move_list) != 4):
             return False
 
-        if(self.existsInTable(move_list[0], int(move_list[1]))):
-            rowNum = abs(ord('A') - ord(move_list[0]))
-            column = int(move_list[1]) - 1
+        rowNum = abs(ord('A') - ord(move_list[0]))
+        column = int(move_list[1]) - 1
+        if(self.existsInTable(rowNum, column)):
             if(self.figureExistsInField(rowNum, column)):
                 if(self.figureExistsInStackPosition(rowNum, column, int(move_list[2]))):
                     if(self.moveInMoves(move_list[3])):
-                        return True
+                        if(self.MoveToLocation(Move(rowNum, column, int(move_list[2]), move_list[3])) != False):
+                            return True
         return False
 
     def existsInTable(self, row, column):
-        if(type(row) is str):
-            if('A' <= row <= chr(ord('A') + self.size - 1)):
-                if(type(column) is int):
-                    if(0 < column <= self.size):
-                        return True
+        if(0 <= row < self.size):
+            if(0 <= column < self.size):
+                return True
         return False
     
     def figureExistsInField(self, row, column):
@@ -114,3 +118,169 @@ class Table:
               self.Oscore > self.maxStack/2):
             return True
         return False
+    
+    def surroundingFieldsAreEmpty(self, move):
+        empty = True
+        if(move.row > 0):
+            if(move.column > 0):
+                if(len(self.matrix[move.row - 1][move.column - 1]) != 0):
+                    empty = False
+            if(move.column < 7):
+                if(len(self.matrix[move.row - 1][move.column + 1]) != 0):
+                    empty = False
+        if(move.row < 7):
+            if(move.column > 0):
+                if(len(self.matrix[move.row + 1][move.column - 1]) != 0):
+                    empty = False
+            if(move.column < 7):
+                if(len(self.matrix[move.row + 1][move.column + 1]) != 0):
+                    empty = False
+        return empty
+    
+    def isItLeadingToNearestStack(self, move):
+        locations = set()
+        notFound = True
+        iterator = 0
+        needToStartFrom1 = {(move.row, move.column)}
+        needToStartFrom2 = set()
+        visited = {(move.row, move.column)}
+        while(notFound == True):
+            if(iterator != 0):
+                needToStartFrom1.clear()
+                needToStartFrom1.update(needToStartFrom2)
+                needToStartFrom2.clear()
+                iterator += 1
+            else:
+                iterator += 1
+
+            for node in needToStartFrom1:
+                if(self.existsInTable(node[0] - 1, node[1] - 1)):
+                    if((node[0] - 1, node[1] - 1) not in visited):
+                        if(self.figureExistsInField(node[0] - 1, node[1] - 1)):
+                            notFound = False, locations.add((node[0] - 1, node[1] - 1))
+                        visited.add((node[0] - 1, node[1] - 1))
+                        needToStartFrom2.add((node[0] - 1, node[1] - 1))
+
+                if(self.existsInTable(node[0] - 1, node[1] + 1)):
+                    if((node[0] - 1, node[1] + 1) not in visited):
+                        if(self.figureExistsInField(node[0] - 1, node[1] + 1)):
+                            notFound = False, locations.add((node[0] - 1, node[1] + 1))
+                        visited.add((node[0] - 1, node[1] + 1))
+                        needToStartFrom2.add((node[0] - 1, node[1] + 1))
+            
+                if(self.existsInTable(node[0] + 1, node[1] - 1)):
+                    if((node[0] + 1, node[1] - 1) not in visited):
+                        if(self.figureExistsInField(node[0] + 1, node[1] - 1)):
+                            notFound = False, locations.add((node[0] + 1, node[1] - 1))
+                        visited.add((node[0] + 1, node[1] - 1))
+                        needToStartFrom2.add((node[0] + 1, node[1] - 1))
+            
+                if(self.existsInTable(node[0] + 1, node[1] + 1)):
+                    if((node[0] + 1, node[1] + 1) not in visited):
+                        if(self.figureExistsInField(node[0] + 1, node[1] + 1)):
+                            notFound = False, locations.add((node[0] + 1, node[1] + 1))
+                        visited.add((node[0] + 1, node[1] + 1))
+                        needToStartFrom2.add((node[0] + 1, node[1] + 1))
+        
+        location = self.MoveToLocation(move)
+        if(location == False):
+            return False
+        if(location in locations):
+            return True
+        
+        notFound = True
+        iterator2 = 0
+        needToStartFrom1 = {location}
+        needToStartFrom2 = set()
+        visited = {location, (move.row, move.column)}
+        while(notFound == True and iterator2 < iterator):
+            if(iterator2 != 0):
+                needToStartFrom1.clear()
+                needToStartFrom1.update(needToStartFrom2)
+                needToStartFrom2.clear()
+                iterator2 += 1
+                if(iterator2 == iterator):
+                    continue
+            else:
+                iterator2 += 1
+
+            for node in needToStartFrom1:
+                if(self.existsInTable(node[0] - 1, node[1] - 1)):
+                    if((node[0] - 1, node[1] - 1) not in visited):
+                        if((node[0] - 1, node[1] - 1) in locations):
+                            notFound = False
+                            break
+                        visited.add((node[0] - 1, node[1] - 1))
+                        needToStartFrom2.add((node[0] - 1, node[1] - 1))
+
+                if(self.existsInTable(node[0] - 1, node[1] + 1)):
+                    if((node[0] - 1, node[1] + 1) not in visited):
+                        if((node[0] - 1, node[1] + 1) in locations):
+                            notFound = False
+                            break
+                        visited.add((node[0] - 1, node[1] + 1))
+                        needToStartFrom2.add((node[0] - 1, node[1] + 1))
+            
+                if(self.existsInTable(node[0] + 1, node[1] - 1)):
+                    if((node[0] + 1, node[1] - 1) not in visited):
+                        if((node[0] + 1, node[1] - 1) in locations):
+                            notFound = False
+                            break
+                        visited.add((node[0] + 1, node[1] - 1))
+                        needToStartFrom2.add((node[0] + 1, node[1] - 1))
+            
+                if(self.existsInTable(node[0] + 1, node[1] + 1)):
+                    if((node[0] + 1, node[1] + 1) not in visited):
+                        if((node[0] + 1, node[1] + 1) in locations):
+                            notFound = False
+                            break
+                        visited.add((node[0] + 1, node[1] + 1))
+                        needToStartFrom2.add((node[0] + 1, node[1] + 1))
+
+        if(notFound == False and iterator2 < iterator):
+            return True
+        
+    
+    def MoveToLocation(self, move):
+        if(move.direction == self.moves[0]):
+            if(self.existsInTable(move.row - 1, move.column - 1)):
+                return (move.row - 1, move.column - 1)
+            else:
+                return False
+            
+        if(move.direction == self.moves[1]):
+            if(self.existsInTable(move.row - 1, move.column + 1)):
+                return (move.row - 1, move.column + 1)
+            else:
+                return False
+            
+        if(move.direction == self.moves[2]):
+            if(self.existsInTable(move.row + 1, move.column - 1)):
+                return (move.row + 1, move.column - 1)
+            else:
+                return False
+    
+        if(move.direction == self.moves[3]):
+            if(self.existsInTable(move.row + 1, move.column + 1)):
+                return (move.row + 1, move.column + 1)
+            else:
+                return False
+            
+    def canMoveStackOnStack(self, move):
+        location = self.MoveToLocation(move)
+        if(location == False):
+            return False
+        numOfElements = self.numberOfElementInStack(location)
+        currentStackNumOfElements = self.numberOfElementInStack((move.row, move.column))
+        if(move.stackPosition < numOfElements):
+            if(currentStackNumOfElements - move.stackPosition + numOfElements < 9):
+                return True
+        return False
+
+
+    def numberOfElementInStack(self, location):
+        count = 0
+        for element in self.matrix[location[0]][location[1]]:
+            if(element == 'X' or element == 'O'):
+                count += 1
+        return count

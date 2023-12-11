@@ -1,4 +1,5 @@
 from Table import Table
+from Move import Move
 
 class Game:
     def __init__(self) -> None:
@@ -30,7 +31,7 @@ class Game:
                         self.table.player = players[0]
                         self.table.figure = players[1]
                         correct_value = False
-                        print(self.table.player + self.table.figure)
+                        continue
             print("Invalid value entered")
 
     def draw_table(self):
@@ -42,4 +43,6 @@ class Game:
 game = Game()
 game.set_table()
 game.draw_table()
-print(game.enter_move())
+#print(game.enter_move())
+m = Move(1, 1, 0, 'DD')
+print(game.table.canMoveStackOnStack(m))

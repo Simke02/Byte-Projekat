@@ -4,8 +4,10 @@ class Table:
     def __init__(self, size) -> None:
         self.size = size
         self.moves = ["GL", "GD", "DL", "DD"]
-        self.player = "H"
-        self.figure = "X"
+        self.player1 = "H"
+        self.figure1 = "X"
+        self.player2 = "C"
+        self.figure2 = "O"
         self.Xscore = 0
         self.Oscore = 0
         self.maxStack = 0

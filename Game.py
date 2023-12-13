@@ -23,22 +23,33 @@ class Game:
 
         correct_value = True 
         while(correct_value):
-            user_input = input("Enter the first player (H/C) and his figure (X/O) ")
+            user_input = input("Enter the first player (H/C), his figure (X/O) and enter second player (H/C): ")
             players = user_input.split()
-            if(len(players) == 2):
+            if(len(players) == 3):
                 if(players[0] == 'H' or players[0] == 'C'):
                     if(players[1] == 'X' or players[1] == 'O'):
-                        self.table.player = players[0]
-                        self.table.figure = players[1]
-                        correct_value = False
-                        continue
+                        if(players[2] == 'H' or players[2] == "C"):
+                            self.table.player1 = players[0]
+                            self.table.figure1 = players[1]
+                            self.table.player2 = players[2]
+                            self.table.figure2 = 'O' if players[1]=='X' else 'X'
+                            correct_value = False
+                            continue
             print("Invalid value entered")
 
     def draw_table(self):
         self.table.draw_table()
+
+    def declare_winner(self):
+        self.table.declare_winner()
     
     def enter_move(self):
-        return self.table.enter_move()
+        canMove = False
+        while(not canMove):
+            canMove = self.table.enter_move()
+        game.draw_table()
+        if(self.table.finished_game()):
+            self.declare_winner()
 
 game = Game()
 game.set_table()

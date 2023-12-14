@@ -73,7 +73,7 @@ class Table:
                     print()
         print("X: " + str(self.Xscore) + "  O: " + str(self.Oscore))
 
-    def enter_move(self):
+    def enter_move(self, figure):
         wholeMove = input("Enter move: ")
         move_list = wholeMove.split()
         if(len(move_list) != 4):
@@ -81,12 +81,28 @@ class Table:
 
         rowNum = abs(ord('A') - ord(move_list[0]))
         column = int(move_list[1]) - 1
+
+        if(not self.figureExistsInField(rowNum, column)):
+            print("ovde puca")
+
+
         if(self.existsInTable(rowNum, column)):
             if(self.figureExistsInField(rowNum, column)):
-                if(self.figureExistsInStackPosition(rowNum, column, int(move_list[2]))):
+                if(self.figureExistsInStackPosition(rowNum, column, int(move_list[2]), figure)):
                     if(self.moveInMoves(move_list[3])):
-                        if(self.MoveToLocation(Move(rowNum, column, int(move_list[2]), move_list[3])) != False):
-                            return True
+                        next_location = self.MoveToLocation(Move(rowNum, column, int(move_list[2]), move_list[3]))
+                        if(next_location != False):
+                            if(self.canMoveStackOnStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
+                                count = 0
+                                for element in self.matrix[rowNum][column]:
+                                     if(element == 'X' or element == 'O'):
+                                        count += 1
+                                num_of_elements = count - int(move_list[2])
+                                position = self.matrix[next_location[0]][next_location[1]].index('.')
+                                for i in range(num_of_elements):
+                                    self.matrix[next_location[0]][next_location[1]][position+i] = self.matrix[rowNum][column][int(move_list[2])+i]
+                                    self.matrix[rowNum][column][int(move_list[2])+i]='.'    
+                                return True
         return False
 
     def existsInTable(self, row, column):
@@ -102,10 +118,10 @@ class Table:
         return False
     
     #Proveri da li je igrac igra sa svojom figurom
-    def figureExistsInStackPosition(self, row, column, stack_position):
+    def figureExistsInStackPosition(self, row, column, stack_position, figure):
+        
         if(0 <= stack_position < 9):
-            if(self.matrix[row][column][stack_position] == 'X'
-                or self.matrix[row][column][stack_position] == 'O'):
+            if(self.matrix[row][column][stack_position] == figure):
                 return True
         return False
     
@@ -288,10 +304,7 @@ class Table:
         return count
     
     def declare_winner(self):
-        
-        
-        #ovde se ispita ko je pobednik
-        ##winner_found = self.finished_game()
+
         if(self.Xscore < self.Oscore):
             winner_found = "X"
             

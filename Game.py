@@ -42,23 +42,34 @@ class Game:
         self.table.draw_table()
 
     def declare_winner(self):
-        self.table.declare_winner()
+        winner = self.table.declare_winner()
+        if(winner == "Draw"):
+            print("Draw")
+        print("winner is " + winner)
     
     def enter_move(self, figure):
         canMove = False
-        if(self.active_player):
-            fig = game.table.figure1
-        else:
-            fig = game.table.figure2
-
+        
         while(not canMove):
-            canMove = self.table.enter_move()
+            canMove = self.table.enter_move(figure)
 
         game.draw_table()
         self.active_player = not self.active_player
-        if(self.table.finished_game()):
-            print(self.declare_winner())
+       
 
+    def play(self):
+        while(True):
+            if(self.active_player):
+                fig = game.table.figure1
+                print('Player ' + fig, end=" ")
+            else:
+                fig = game.table.figure2
+                print('Player ' + fig, end=" ")
+            self.enter_move(fig)
+             
+            if(self.table.finished_game()):
+                print(self.declare_winner())
+                exit
 
 
 game = Game()
@@ -66,4 +77,5 @@ game.set_table()
 game.draw_table()
 #print(game.enter_move())
 m = Move(1, 1, 0, 'DD')
+game.play()
 print(game.table.canMoveStackOnStack(m))

@@ -101,7 +101,7 @@ class Table:
             return True
         return False
     
-    #Proveri da li je pravi igrac
+    #Proveri da li je igrac igra sa svojom figurom
     def figureExistsInStackPosition(self, row, column, stack_position):
         if(0 <= stack_position < 9):
             if(self.matrix[row][column][stack_position] == 'X'
@@ -286,3 +286,19 @@ class Table:
             if(element == 'X' or element == 'O'):
                 count += 1
         return count
+    
+    def declare_winner(self):
+        
+        
+        #ovde se ispita ko je pobednik
+        ##winner_found = self.finished_game()
+        if(self.Xscore < self.Oscore):
+            winner_found = "X"
+            
+        elif(self.Oscore < self.Xscore):
+            winner_found = "O"
+        else:
+            winner_found = "Draw" 
+        
+        return winner_found
+            

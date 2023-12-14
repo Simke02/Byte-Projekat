@@ -4,6 +4,7 @@ from Move import Move
 class Game:
     def __init__(self) -> None:
         self.size = 0
+        self.active_player = True
 
     def set_table(self):
         correct_value = True 
@@ -43,13 +44,22 @@ class Game:
     def declare_winner(self):
         self.table.declare_winner()
     
-    def enter_move(self):
+    def enter_move(self, figure):
         canMove = False
+        if(self.active_player):
+            fig = game.table.figure1
+        else:
+            fig = game.table.figure2
+
         while(not canMove):
             canMove = self.table.enter_move()
+
         game.draw_table()
+        self.active_player = not self.active_player
         if(self.table.finished_game()):
-            self.declare_winner()
+            print(self.declare_winner())
+
+
 
 game = Game()
 game.set_table()

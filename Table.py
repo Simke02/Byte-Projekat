@@ -92,17 +92,18 @@ class Table:
                     if(self.moveInMoves(move_list[3])):
                         next_location = self.MoveToLocation(Move(rowNum, column, int(move_list[2]), move_list[3]))
                         if(next_location != False):
-                            if(self.canMoveStackOnStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
-                                count = 0
-                                for element in self.matrix[rowNum][column]:
-                                     if(element == 'X' or element == 'O'):
-                                        count += 1
-                                num_of_elements = count - int(move_list[2])
-                                position = self.matrix[next_location[0]][next_location[1]].index('.')
-                                for i in range(num_of_elements):
-                                    self.matrix[next_location[0]][next_location[1]][position+i] = self.matrix[rowNum][column][int(move_list[2])+i]
-                                    self.matrix[rowNum][column][int(move_list[2])+i]='.'    
-                                return True
+                            if(self.isItLeadingToNearestStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
+                                if(self.canMoveStackOnStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
+                                    count = 0
+                                    for element in self.matrix[rowNum][column]:
+                                        if(element == 'X' or element == 'O'):
+                                            count += 1
+                                    num_of_elements = count - int(move_list[2])
+                                    position = self.matrix[next_location[0]][next_location[1]].index('.')
+                                    for i in range(num_of_elements):
+                                        self.matrix[next_location[0]][next_location[1]][position+i] = self.matrix[rowNum][column][int(move_list[2])+i]
+                                        self.matrix[rowNum][column][int(move_list[2])+i]='.'    
+                                    return True
         return False
 
     def existsInTable(self, row, column):
@@ -141,17 +142,17 @@ class Table:
         empty = True
         if(move.row > 0):
             if(move.column > 0):
-                if(len(self.matrix[move.row - 1][move.column - 1]) != 0):
+                if(self.matrix[move.row - 1][move.column - 1][0] != '.'):
                     empty = False
             if(move.column < 7):
-                if(len(self.matrix[move.row - 1][move.column + 1]) != 0):
+                if(self.matrix[move.row - 1][move.column + 1][0] != '.'):
                     empty = False
         if(move.row < 7):
             if(move.column > 0):
-                if(len(self.matrix[move.row + 1][move.column - 1]) != 0):
+                if(self.matrix[move.row + 1][move.column - 1][0] != '.'):
                     empty = False
             if(move.column < 7):
-                if(len(self.matrix[move.row + 1][move.column + 1]) != 0):
+                if(self.matrix[move.row + 1][move.column + 1][0] != '.'):
                     empty = False
         return empty
     
@@ -172,6 +173,7 @@ class Table:
                 iterator += 1
 
             for node in needToStartFrom1:
+                #Gore levo
                 if(self.existsInTable(node[0] - 1, node[1] - 1)):
                     if((node[0] - 1, node[1] - 1) not in visited):
                         if(self.figureExistsInField(node[0] - 1, node[1] - 1)):
@@ -179,6 +181,7 @@ class Table:
                         visited.add((node[0] - 1, node[1] - 1))
                         needToStartFrom2.add((node[0] - 1, node[1] - 1))
 
+                #Gore desno
                 if(self.existsInTable(node[0] - 1, node[1] + 1)):
                     if((node[0] - 1, node[1] + 1) not in visited):
                         if(self.figureExistsInField(node[0] - 1, node[1] + 1)):
@@ -186,13 +189,15 @@ class Table:
                         visited.add((node[0] - 1, node[1] + 1))
                         needToStartFrom2.add((node[0] - 1, node[1] + 1))
             
+                #Dole levo
                 if(self.existsInTable(node[0] + 1, node[1] - 1)):
                     if((node[0] + 1, node[1] - 1) not in visited):
                         if(self.figureExistsInField(node[0] + 1, node[1] - 1)):
                             notFound = False, locations.add((node[0] + 1, node[1] - 1))
                         visited.add((node[0] + 1, node[1] - 1))
                         needToStartFrom2.add((node[0] + 1, node[1] - 1))
-            
+
+                #Dole desno
                 if(self.existsInTable(node[0] + 1, node[1] + 1)):
                     if((node[0] + 1, node[1] + 1) not in visited):
                         if(self.figureExistsInField(node[0] + 1, node[1] + 1)):
@@ -290,7 +295,8 @@ class Table:
             return False
         numOfElements = self.numberOfElementInStack(location)
         currentStackNumOfElements = self.numberOfElementInStack((move.row, move.column))
-        if(move.stackPosition < numOfElements):
+        emptySurroundingFields = self.surroundingFieldsAreEmpty(move)
+        if(move.stackPosition < numOfElements or emptySurroundingFields):
             if(currentStackNumOfElements - move.stackPosition + numOfElements < 9):
                 return True
         return False

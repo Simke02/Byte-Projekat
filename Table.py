@@ -4,11 +4,14 @@ class Table:
     def __init__(self, size) -> None:
         self.size = size
         self.moves = ["GL", "GD", "DL", "DD"]
-        self.player = "H"
-        self.figure = "X"
+        self.player1 = "H"
+        self.figure1 = "X"
+        self.player2 = "C"
+        self.figure2 = "O"
         self.Xscore = 0
         self.Oscore = 0
         self.maxStack = 0
+        self.win = False
         self.figures_count = 0
         self.matrix = [[[" " for _ in range(9)] for _ in range(self.size)]
                        for _ in range(self.size)]
@@ -71,7 +74,7 @@ class Table:
                     print()
         print("X: " + str(self.Xscore) + "  O: " + str(self.Oscore))
 
-    def enter_move(self):
+    def enter_move(self, figure):
         wholeMove = input("Enter move: ")
         move_list = wholeMove.split()
         if(len(move_list) != 4):
@@ -79,12 +82,32 @@ class Table:
 
         rowNum = abs(ord('A') - ord(move_list[0]))
         column = int(move_list[1]) - 1
+
         if(self.existsInTable(rowNum, column)):
             if(self.figureExistsInField(rowNum, column)):
-                if(self.figureExistsInStackPosition(rowNum, column, int(move_list[2]))):
+                if(self.figureExistsInStackPosition(rowNum, column, int(move_list[2]), figure)):
                     if(self.moveInMoves(move_list[3])):
-                        if(self.MoveToLocation(Move(rowNum, column, int(move_list[2]), move_list[3])) != False):
-                            return True
+                        next_location = self.MoveToLocation(Move(rowNum, column, int(move_list[2]), move_list[3]))
+                        if(next_location != False):
+                            if(self.isItLeadingToNearestStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
+                                if(self.canMoveStackOnStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
+                                    count = self.numberOfElementInStack((rowNum, column))
+                                    
+                                    num_of_elements = count - int(move_list[2])
+                                    position = self.matrix[next_location[0]][next_location[1]].index('.')
+                                    for i in range(num_of_elements):
+                                        self.matrix[next_location[0]][next_location[1]][position+i] = self.matrix[rowNum][column][int(move_list[2])+i]
+                                        self.matrix[rowNum][column][int(move_list[2])+i]='.'
+
+                                    count_next = self.numberOfElementInStack(next_location)
+                                    if(count_next > 8):
+                                        if (self.matrix[next_location[0]][next_location[1]][8]=='X'):
+                                            self.Xscore+=1
+                                        else:
+                                            self.Oscore+=1  
+                                        for i in range(9):
+                                            self.matrix[next_location[0]][next_location[1]][i]='.'  
+                                    return True
         return False
 
     def existsInTable(self, row, column):
@@ -99,11 +122,11 @@ class Table:
             return True
         return False
     
-    #Proveri da li je pravi igrac
-    def figureExistsInStackPosition(self, row, column, stack_position):
+    #Proveri da li je igrac igra sa svojom figurom
+    def figureExistsInStackPosition(self, row, column, stack_position, figure):
+        
         if(0 <= stack_position < 9):
-            if(self.matrix[row][column][stack_position] == 'X'
-                or self.matrix[row][column][stack_position] == 'O'):
+            if(self.matrix[row][column][stack_position] == figure):
                 return True
         return False
     
@@ -114,8 +137,8 @@ class Table:
     
     def finished_game(self):
         if(self.figures_count == 0 or
-            self.Xscore > self.maxStack/2 or
-              self.Oscore > self.maxStack/2):
+            self.Xscore > 0 or
+              self.Oscore > 0):
             return True
         return False
     
@@ -123,17 +146,17 @@ class Table:
         empty = True
         if(move.row > 0):
             if(move.column > 0):
-                if(len(self.matrix[move.row - 1][move.column - 1]) != 0):
+                if(self.matrix[move.row - 1][move.column - 1][0] != '.'):
                     empty = False
             if(move.column < 7):
-                if(len(self.matrix[move.row - 1][move.column + 1]) != 0):
+                if(self.matrix[move.row - 1][move.column + 1][0] != '.'):
                     empty = False
         if(move.row < 7):
             if(move.column > 0):
-                if(len(self.matrix[move.row + 1][move.column - 1]) != 0):
+                if(self.matrix[move.row + 1][move.column - 1][0] != '.'):
                     empty = False
             if(move.column < 7):
-                if(len(self.matrix[move.row + 1][move.column + 1]) != 0):
+                if(self.matrix[move.row + 1][move.column + 1][0] != '.'):
                     empty = False
         return empty
     
@@ -154,6 +177,7 @@ class Table:
                 iterator += 1
 
             for node in needToStartFrom1:
+                #Gore levo
                 if(self.existsInTable(node[0] - 1, node[1] - 1)):
                     if((node[0] - 1, node[1] - 1) not in visited):
                         if(self.figureExistsInField(node[0] - 1, node[1] - 1)):
@@ -161,6 +185,7 @@ class Table:
                         visited.add((node[0] - 1, node[1] - 1))
                         needToStartFrom2.add((node[0] - 1, node[1] - 1))
 
+                #Gore desno
                 if(self.existsInTable(node[0] - 1, node[1] + 1)):
                     if((node[0] - 1, node[1] + 1) not in visited):
                         if(self.figureExistsInField(node[0] - 1, node[1] + 1)):
@@ -168,13 +193,15 @@ class Table:
                         visited.add((node[0] - 1, node[1] + 1))
                         needToStartFrom2.add((node[0] - 1, node[1] + 1))
             
+                #Dole levo
                 if(self.existsInTable(node[0] + 1, node[1] - 1)):
                     if((node[0] + 1, node[1] - 1) not in visited):
                         if(self.figureExistsInField(node[0] + 1, node[1] - 1)):
                             notFound = False, locations.add((node[0] + 1, node[1] - 1))
                         visited.add((node[0] + 1, node[1] - 1))
                         needToStartFrom2.add((node[0] + 1, node[1] - 1))
-            
+
+                #Dole desno
                 if(self.existsInTable(node[0] + 1, node[1] + 1)):
                     if((node[0] + 1, node[1] + 1) not in visited):
                         if(self.figureExistsInField(node[0] + 1, node[1] + 1)):
@@ -272,8 +299,9 @@ class Table:
             return False
         numOfElements = self.numberOfElementInStack(location)
         currentStackNumOfElements = self.numberOfElementInStack((move.row, move.column))
-        if(move.stackPosition < numOfElements):
-            if(currentStackNumOfElements - move.stackPosition + numOfElements < 9):
+        emptySurroundingFields = self.surroundingFieldsAreEmpty(move)
+        if(move.stackPosition < numOfElements or emptySurroundingFields):
+            if(currentStackNumOfElements - move.stackPosition + numOfElements < 10):
                 return True
         return False
 
@@ -284,3 +312,16 @@ class Table:
             if(element == 'X' or element == 'O'):
                 count += 1
         return count
+    
+    def declare_winner(self):
+
+        if(self.Xscore > self.Oscore):
+            winner_found = "X"
+            
+        elif(self.Oscore > self.Xscore):
+            winner_found = "O"
+        else:
+            winner_found = "Draw" 
+        
+        return winner_found
+            

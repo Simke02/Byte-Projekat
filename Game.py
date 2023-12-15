@@ -58,7 +58,7 @@ class Game:
        
 
     def play(self):
-        while(True):
+        while(not self.table.win):
             if(self.active_player):
                 fig = game.table.figure1
                 print('Player ' + fig, end=" ")
@@ -68,8 +68,9 @@ class Game:
             self.enter_move(fig)
              
             if(self.table.finished_game()):
-                print(self.declare_winner())
-                exit
+                self.declare_winner()
+                self.table.win= True   
+            
 
 
 game = Game()
@@ -79,4 +80,3 @@ game.draw_table()
 m = Move(1, 1, 0, 'DD')
 #print(game.table.MoveToLocation(m))
 game.play()
-print(game.table.canMoveStackOnStack(m))

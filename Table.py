@@ -11,6 +11,7 @@ class Table:
         self.Xscore = 0
         self.Oscore = 0
         self.maxStack = 0
+        self.win = False
         self.figures_count = 0
         self.matrix = [[[" " for _ in range(9)] for _ in range(self.size)]
                        for _ in range(self.size)]
@@ -82,10 +83,6 @@ class Table:
         rowNum = abs(ord('A') - ord(move_list[0]))
         column = int(move_list[1]) - 1
 
-        if(not self.figureExistsInField(rowNum, column)):
-            print("ovde puca")
-
-
         if(self.existsInTable(rowNum, column)):
             if(self.figureExistsInField(rowNum, column)):
                 if(self.figureExistsInStackPosition(rowNum, column, int(move_list[2]), figure)):
@@ -94,15 +91,22 @@ class Table:
                         if(next_location != False):
                             if(self.isItLeadingToNearestStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
                                 if(self.canMoveStackOnStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
-                                    count = 0
-                                    for element in self.matrix[rowNum][column]:
-                                        if(element == 'X' or element == 'O'):
-                                            count += 1
+                                    count = self.numberOfElementInStack((rowNum, column))
+                                    
                                     num_of_elements = count - int(move_list[2])
                                     position = self.matrix[next_location[0]][next_location[1]].index('.')
                                     for i in range(num_of_elements):
                                         self.matrix[next_location[0]][next_location[1]][position+i] = self.matrix[rowNum][column][int(move_list[2])+i]
-                                        self.matrix[rowNum][column][int(move_list[2])+i]='.'    
+                                        self.matrix[rowNum][column][int(move_list[2])+i]='.'
+
+                                    count_next = self.numberOfElementInStack(next_location)
+                                    if(count_next > 8):
+                                        if (self.matrix[next_location[0]][next_location[1]][8]=='X'):
+                                            self.Xscore+=1
+                                        else:
+                                            self.Oscore+=1  
+                                        for i in range(9):
+                                            self.matrix[next_location[0]][next_location[1]][i]='.'  
                                     return True
         return False
 
@@ -133,8 +137,8 @@ class Table:
     
     def finished_game(self):
         if(self.figures_count == 0 or
-            self.Xscore > self.maxStack/2 or
-              self.Oscore > self.maxStack/2):
+            self.Xscore > 0 or
+              self.Oscore > 0):
             return True
         return False
     
@@ -297,7 +301,7 @@ class Table:
         currentStackNumOfElements = self.numberOfElementInStack((move.row, move.column))
         emptySurroundingFields = self.surroundingFieldsAreEmpty(move)
         if(move.stackPosition < numOfElements or emptySurroundingFields):
-            if(currentStackNumOfElements - move.stackPosition + numOfElements < 9):
+            if(currentStackNumOfElements - move.stackPosition + numOfElements < 10):
                 return True
         return False
 
@@ -311,10 +315,10 @@ class Table:
     
     def declare_winner(self):
 
-        if(self.Xscore < self.Oscore):
+        if(self.Xscore > self.Oscore):
             winner_found = "X"
             
-        elif(self.Oscore < self.Xscore):
+        elif(self.Oscore > self.Xscore):
             winner_found = "O"
         else:
             winner_found = "Draw" 

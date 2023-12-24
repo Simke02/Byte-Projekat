@@ -100,13 +100,14 @@ class Table:
                                         self.matrix[rowNum][column][int(move_list[2])+i]='.'
 
                                     count_next = self.numberOfElementInStack(next_location)
-                                    if(count_next > 8):
+                                    if(count_next > 7):
                                         if (self.matrix[next_location[0]][next_location[1]][8]=='X'):
                                             self.Xscore+=1
                                         else:
                                             self.Oscore+=1  
                                         for i in range(9):
-                                            self.matrix[next_location[0]][next_location[1]][i]='.'  
+                                            self.matrix[next_location[0]][next_location[1]][i]='.' 
+                                        self.figures_count-=8 
                                     return True
         return False
 
@@ -301,7 +302,7 @@ class Table:
         currentStackNumOfElements = self.numberOfElementInStack((move.row, move.column))
         emptySurroundingFields = self.surroundingFieldsAreEmpty(move)
         if(move.stackPosition < numOfElements or emptySurroundingFields):
-            if(currentStackNumOfElements - move.stackPosition + numOfElements < 10):
+            if(currentStackNumOfElements - move.stackPosition + numOfElements < 9):
                 return True
         return False
 
@@ -325,3 +326,13 @@ class Table:
         
         return winner_found
             
+    def allPossibleMoves(self, active_player):
+        allMoves = set()
+        for i in range(self.size):
+            for j in range(self.size):
+                z = 0
+                while(self.matrix[i][j][z]!=" " and self.matrix[i][j][z]!="."):
+                    if(self.matrix[i][j][z]==active_player):
+                        allMoves.add(self.validMovesForConcreteFigure(self.matrix[i][j][z]))
+                    z+=1
+        return allMoves

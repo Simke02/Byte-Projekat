@@ -61,10 +61,10 @@ class Game:
         while(not self.table.win):
             if(self.active_player):
                 fig = game.table.figure1
-                print('Player ' + fig, end=" ")
             else:
                 fig = game.table.figure2
-                print('Player ' + fig, end=" ")
+            self.table.printingAllPossibleMoves(fig)
+            print('Player ' + fig, end=" ")
             self.enter_move(fig)
              
             if(self.table.finished_game()):

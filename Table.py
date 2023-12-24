@@ -82,33 +82,28 @@ class Table:
 
         rowNum = abs(ord('A') - ord(move_list[0]))
         column = int(move_list[1]) - 1
+        stack_position = int(move_list[2])
 
-        if(self.existsInTable(rowNum, column)):
-            if(self.figureExistsInField(rowNum, column)):
-                if(self.figureExistsInStackPosition(rowNum, column, int(move_list[2]), figure)):
-                    if(self.moveInMoves(move_list[3])):
-                        next_location = self.MoveToLocation(Move(rowNum, column, int(move_list[2]), move_list[3]))
-                        if(next_location != False):
-                            if(self.isItLeadingToNearestStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
-                                if(self.canMoveStackOnStack(Move(rowNum, column, int(move_list[2]), move_list[3]))):
-                                    count = self.numberOfElementInStack((rowNum, column))
+        if(self.isMoveValid(rowNum, column, stack_position, move_list[3], figure)):
+            next_location = self.MoveToLocation(Move(rowNum, column, stack_position, move_list[3]))
+            count = self.numberOfElementInStack((rowNum, column))
                                     
-                                    num_of_elements = count - int(move_list[2])
-                                    position = self.matrix[next_location[0]][next_location[1]].index('.')
-                                    for i in range(num_of_elements):
-                                        self.matrix[next_location[0]][next_location[1]][position+i] = self.matrix[rowNum][column][int(move_list[2])+i]
-                                        self.matrix[rowNum][column][int(move_list[2])+i]='.'
+            num_of_elements = count - stack_position
+            position = self.matrix[next_location[0]][next_location[1]].index('.')
+            for i in range(num_of_elements):
+                self.matrix[next_location[0]][next_location[1]][position+i] = self.matrix[rowNum][column][stack_position+i]
+                self.matrix[rowNum][column][stack_position+i]='.'
 
-                                    count_next = self.numberOfElementInStack(next_location)
-                                    if(count_next > 7):
-                                        if (self.matrix[next_location[0]][next_location[1]][8]=='X'):
-                                            self.Xscore+=1
-                                        else:
-                                            self.Oscore+=1  
-                                        for i in range(9):
-                                            self.matrix[next_location[0]][next_location[1]][i]='.' 
-                                        self.figures_count-=8 
-                                    return True
+            count_next = self.numberOfElementInStack(next_location)
+            if(count_next > 7):
+                if (self.matrix[next_location[0]][next_location[1]][8]=='X'):
+                    self.Xscore+=1
+                else:
+                    self.Oscore+=1  
+                for i in range(9):
+                    self.matrix[next_location[0]][next_location[1]][i]='.' 
+                self.figures_count-=8 
+            return True
         return False
 
     def existsInTable(self, row, column):
@@ -333,6 +328,33 @@ class Table:
                 z = 0
                 while(self.matrix[i][j][z]!=" " and self.matrix[i][j][z]!="."):
                     if(self.matrix[i][j][z]==active_player):
-                        allMoves.add(self.validMovesForConcreteFigure(self.matrix[i][j][z]))
+                        newMoves = self.validMovesForConcreteFigure(i, j, z, active_player)
+                        if(newMoves != None):
+                            allMoves.update(newMoves)
                     z+=1
         return allMoves
+
+    def isMoveValid(self, rowNum, column, stack_position, direction, figure):
+
+        if(self.existsInTable(rowNum, column)):
+            if(self.figureExistsInField(rowNum, column)):
+                if(self.figureExistsInStackPosition(rowNum, column, stack_position, figure)):
+                    if(self.moveInMoves(direction)):
+                        next_location = self.MoveToLocation(Move(rowNum, column, stack_position, direction))
+                        if(next_location != False):
+                            if(self.isItLeadingToNearestStack(Move(rowNum, column, stack_position, direction))):
+                                if(self.canMoveStackOnStack(Move(rowNum, column, stack_position, direction))):
+                                    return True
+        return False
+    
+    def validMovesForConcreteFigure(self, rowNum, column, stack_position, active_player):
+        validMoves = set()
+        for direction in self.moves:
+            if(self.isMoveValid(rowNum, column, stack_position, direction, active_player)):
+                validMoves.add(Move(rowNum, column, stack_position, direction))
+        if(len(validMoves) == 0):
+            return None
+        return validMoves
+    
+    def printingAllPossibleMoves(self, active_player):
+        Move.printMovesForPlayer(self.allPossibleMoves(active_player))

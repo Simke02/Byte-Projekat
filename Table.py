@@ -1,4 +1,5 @@
 from Move import Move
+import math
 
 class Table:
     def __init__(self, size) -> None:
@@ -13,6 +14,7 @@ class Table:
         self.maxStack = 0
         self.win = False
         self.figures_count = 0
+        self.turn = 0
         self.matrix = [[[" " for _ in range(9)] for _ in range(self.size)]
                        for _ in range(self.size)]
         
@@ -103,6 +105,7 @@ class Table:
                 for i in range(9):
                     self.matrix[next_location[0]][next_location[1]][i]='.' 
                 self.figures_count-=8 
+            self.turn += 1
             return True
         return False
 
@@ -358,3 +361,91 @@ class Table:
     
     def printingAllPossibleMoves(self, active_player):
         Move.printMovesForPlayer(self.allPossibleMoves(active_player))
+
+    def playAllMoves(self, allMoves):
+        allTables = set()
+        for move in allMoves:
+            table = Table(self.size)
+            table.copyTable(self)
+            table.playMove(move)
+            allTables.add(table)
+        return allTables
+
+    def getNextMove(self, depth, player):
+        value = self.alphaBeta(depth, -math.inf, math.inf, player)
+        return value[1]
+
+    def alphaBeta(self, depth, alpha, beta, player):
+        allMoves = self.allPossibleMoves(player)
+        allTables = self.playAllMoves(allMoves)
+        if depth == 0 or len(allMoves) == 0:
+            #Treba da se vrati vrednost heuristike i cela tabela
+            return self.heuristicValue(depth, player)
+        # X je maksimajzing plejer
+        if player == 'X':
+            #Zapamti da value treba da sadrzi i info o potezu ili tabeli
+            value = -math.inf
+            for table in allTables:
+                value = max(value, table.alphaBeta(depth-1, alpha, beta, 'O'))
+                if value > beta:
+                    break
+                alpha = max(alpha, value)
+            return value
+        else:
+            value = math.inf
+            for table in allTables:
+                value = min(value, table.alphaBeta(depth-1, alpha, beta, 'X'))
+                if value < alpha:
+                    break
+                beta = min(beta, value)
+            return value
+        
+    def copyTable(self, table):
+        self.player1 = table.player1
+        self.figure1 = table.figure1
+        self.player2 = table.player2
+        self.figure2 = table.figure2
+        self.Xscore = table.Xscore
+        self.Oscore = table.Oscore
+        self.maxStack = table.maxStack
+        self.win = table.win
+        self.figures_count = table.figures_count
+        for i in range(self.size):
+            for j in range(self.size):
+                for z in range(9):
+                    self.matrix[i][j][z] = table.matrix[i][j][z]
+        
+    def playMove(self, move):
+        count_of_figures = self.numberOfElementInStack((move.row, move.column))
+        figures_to_move = count_of_figures - move.stackPosition
+        top_of_stack = 0
+        i = 0
+        location = self.MoveToLocation(move)
+        while i < 9 or self.matrix[location[0]][location[1]][i] != '.':
+            top_of_stack += 1
+            i += 1
+        for i in range(figures_to_move):
+            self.matrix[location[0]][location[1]][top_of_stack + i] = self.matrix[move.row][move.column][move.stackPosition + i]
+            self.matrix[move.row][move.column][move.stackPosition + i] = '.'
+        self.turn += 1
+        new_number_of_figures = self.numberOfElementInStack(location)
+        if(new_number_of_figures > 7):
+            if (self.matrix[location[0]][location[1]][8]=='X'):
+                self.Xscore+=1
+            else:
+                self.Oscore+=1  
+            for i in range(9):
+                self.matrix[location[0]][location[1]][i]='.' 
+            self.figures_count-=8 
+        self.turn += 1
+
+    def heuristicValue(self, depth, player):
+        if depth != 0:
+            if self.finished_game():
+                if self.declare_winner == 'X':
+                    return (1, self)
+                elif self.declare_winner == 'O':
+                    return (-1, self)
+                else:
+                    return (0, self)
+        #Ovde treba ako nije gotova igra

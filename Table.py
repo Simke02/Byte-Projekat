@@ -373,7 +373,8 @@ class Table:
 
     def getNextMove(self, depth, player):
         value = self.alphaBeta(depth, -math.inf, math.inf, player)
-        return value[1]
+        move = self.findTheDifference(value[1])
+        return move
 
     def alphaBeta(self, depth, alpha, beta, player):
         allMoves = self.allPossibleMoves(player)
@@ -384,20 +385,26 @@ class Table:
         # X je maksimajzing plejer
         if player == 'X':
             #Zapamti da value treba da sadrzi i info o potezu ili tabeli
-            value = -math.inf
+            value = (-math.inf, self)
             for table in allTables:
-                value = max(value, table.alphaBeta(depth-1, alpha, beta, 'O'))
-                if value > beta:
+                new_value = table.alphaBeta(depth-1, alpha, beta, 'O')
+                if new_value[0] > value[0]:
+                    value = new_value
+                #value = max(value, table.alphaBeta(depth-1, alpha, beta, 'O'))
+                if value[0] > beta:
                     break
-                alpha = max(alpha, value)
+                alpha = max(alpha, value[0])
             return value
         else:
-            value = math.inf
+            value = (math.inf, self)
             for table in allTables:
-                value = min(value, table.alphaBeta(depth-1, alpha, beta, 'X'))
-                if value < alpha:
+                new_value = table.alphaBeta(depth-1, alpha, beta, 'X')
+                if new_value[0] < value[0]:
+                    value = new_value
+                #value = min(value, table.alphaBeta(depth-1, alpha, beta, 'X'))
+                if value[0] < alpha:
                     break
-                beta = min(beta, value)
+                beta = min(beta, value[0])
             return value
         
     def copyTable(self, table):
@@ -448,4 +455,57 @@ class Table:
                     return (-1, self)
                 else:
                     return (0, self)
-        #Ovde treba ako nije gotova igra
+        else:
+            location = self.findBiggestStack()
+            distance = self.shortestFigureToBiggestStack(location)
+            moves_counter = 16 - depth
+            probability = (moves_counter/distance)/100
+            if player == 'O':
+                probability = -1*probability
+            return (probability, self)
+    
+    def findBiggestStack(self):
+        locationR = ()
+        countR = 0
+        countL = 0
+        for i in range(self.size):
+            for j in range(self.size):
+                countL = self.numberOfElementInStack((i, j))
+                if countR < countL:
+                    locationR = (i, j)
+        return locationR
+    
+    def shortestFigureToBiggestStack(self, location):
+        return
+    
+    def findTheDifference(self, table):
+        locationSelf = ()
+        locationTable = ()
+        for i in range(self.size):
+            for j in range(self.size):
+                for z in range(9):
+                    if self.matrix[i][j][z] != table.matrix[i][j][z]:
+                        if self.matrix[i][j][z] == '.':
+                            locationSelf = (i, j, z)
+                            break
+
+        if(self.existsInTable(locationSelf[0] - 1, locationSelf[1] - 1)):
+            for i in range(9):
+                if self.matrix[locationSelf[0] - 1][locationSelf[1] - 1][i] != table.matrix[locationSelf[0] - 1][locationSelf[1] - 1][i]:
+                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'GL')
+
+        if(self.existsInTable(locationSelf[0] - 1, locationSelf[1] + 1)):
+            for i in range(9):
+                if self.matrix[locationSelf[0] - 1][locationSelf[1] + 1][i] != table.matrix[locationSelf[0] - 1][locationSelf[1] + 1][i]:
+                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'GD')
+                    
+        if(self.existsInTable(locationSelf[0] + 1, locationSelf[1] - 1)):
+            for i in range(9):
+                if self.matrix[locationSelf[0] + 1][locationSelf[1] - 1][i] != table.matrix[locationSelf[0] + 1][locationSelf[1] - 1][i]:
+                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'DL')
+
+        if(self.existsInTable(locationSelf[0] + 1, locationSelf[1] + 1)):
+            for i in range(9):
+                if self.matrix[locationSelf[0] + 1][locationSelf[1] + 1][i] != table.matrix[locationSelf[0] + 1][locationSelf[1] + 1][i]:
+                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'DD')
+        

@@ -30,13 +30,10 @@ class Table:
                 for z in range(9):
                     self.matrix[i][j][z] = "."
                 if(i > 0 and i < self.size - 1):
-                #if(i > 1 and i < self.size - 1):
                     self.matrix[i][j][0] = figure 
                 j += 2
         self.figures_count = (self.size - 2) * (self.size / 2)
         self.maxStack = self.figures_count / 8
-
-        #self.matrix[0][2][0] = figure 
     
     def draw_table(self):
         print("  ", end=" ")
@@ -77,14 +74,28 @@ class Table:
         print("X: " + str(self.Xscore) + "  O: " + str(self.Oscore))
 
     def enter_move(self, figure):
-        wholeMove = input("Enter move: ")
-        move_list = wholeMove.split()
-        if(len(move_list) != 4):
-            return False
+        computer = False
+        if figure == self.figure1:
+            if self.player1 == 'C':
+                computer = True
+        else:
+            if self.player2 == 'C':
+                computer = True
+        if not computer:
+            wholeMove = input("Enter move: ")
+            move_list = wholeMove.split()
+            if(len(move_list) != 4):
+                return False
 
-        rowNum = abs(ord('A') - ord(move_list[0]))
-        column = int(move_list[1]) - 1
-        stack_position = int(move_list[2])
+            rowNum = abs(ord('A') - ord(move_list[0]))
+            column = int(move_list[1]) - 1
+            stack_position = int(move_list[2])
+        else:
+            move = self.getNextMove(1, figure)
+            move_list = [move.row, move.column, move.stackPosition, move.direction]
+            rowNum = move_list[0]
+            column = move_list[1]
+            stack_position = move_list[2]
 
         if(self.isMoveValid(rowNum, column, stack_position, move_list[3], figure)):
             next_location = self.MoveToLocation(Move(rowNum, column, stack_position, move_list[3]))
@@ -121,9 +132,7 @@ class Table:
             return True
         return False
     
-    #Proveri da li je igrac igra sa svojom figurom
     def figureExistsInStackPosition(self, row, column, stack_position, figure):
-        
         if(0 <= stack_position < 9):
             if(self.matrix[row][column][stack_position] == figure):
                 return True
@@ -136,8 +145,8 @@ class Table:
     
     def finished_game(self):
         if(self.figures_count == 0 or
-            self.Xscore > 0 or
-              self.Oscore > 0):
+            self.Xscore > self.maxStack/2 or
+              self.Oscore > self.maxStack/2):
             return True
         return False
     
@@ -377,20 +386,18 @@ class Table:
         return move
 
     def alphaBeta(self, depth, alpha, beta, player):
+        if depth == 0:
+            return self.heuristicValue(depth, player)
         allMoves = self.allPossibleMoves(player)
         allTables = self.playAllMoves(allMoves)
-        if depth == 0 or len(allMoves) == 0:
-            #Treba da se vrati vrednost heuristike i cela tabela
+        if len(allMoves) == 0:
             return self.heuristicValue(depth, player)
-        # X je maksimajzing plejer
         if player == 'X':
-            #Zapamti da value treba da sadrzi i info o potezu ili tabeli
             value = (-math.inf, self)
             for table in allTables:
                 new_value = table.alphaBeta(depth-1, alpha, beta, 'O')
                 if new_value[0] > value[0]:
                     value = new_value
-                #value = max(value, table.alphaBeta(depth-1, alpha, beta, 'O'))
                 if value[0] > beta:
                     break
                 alpha = max(alpha, value[0])
@@ -401,7 +408,6 @@ class Table:
                 new_value = table.alphaBeta(depth-1, alpha, beta, 'X')
                 if new_value[0] < value[0]:
                     value = new_value
-                #value = min(value, table.alphaBeta(depth-1, alpha, beta, 'X'))
                 if value[0] < alpha:
                     break
                 beta = min(beta, value[0])
@@ -426,11 +432,8 @@ class Table:
         count_of_figures = self.numberOfElementInStack((move.row, move.column))
         figures_to_move = count_of_figures - move.stackPosition
         top_of_stack = 0
-        i = 0
         location = self.MoveToLocation(move)
-        while i < 9 or self.matrix[location[0]][location[1]][i] != '.':
-            top_of_stack += 1
-            i += 1
+        top_of_stack = self.numberOfElementInStack(location)
         for i in range(figures_to_move):
             self.matrix[location[0]][location[1]][top_of_stack + i] = self.matrix[move.row][move.column][move.stackPosition + i]
             self.matrix[move.row][move.column][move.stackPosition + i] = '.'
@@ -456,9 +459,9 @@ class Table:
                 else:
                     return (0, self)
         else:
-            location = self.findBiggestStack()
-            distance = self.shortestFigureToBiggestStack(location)
-            moves_counter = 16 - depth
+            locationAndCount = self.findBiggestStack()
+            distance = self.shortestFigureToBiggestStack(locationAndCount, player)
+            moves_counter = 1 - depth
             probability = (moves_counter/distance)/100
             if player == 'O':
                 probability = -1*probability
@@ -472,12 +475,68 @@ class Table:
             for j in range(self.size):
                 countL = self.numberOfElementInStack((i, j))
                 if countR < countL:
-                    locationR = (i, j)
+                    countR = countL
+                    locationR = (i, j, countR)
         return locationR
     
-    def shortestFigureToBiggestStack(self, location):
-        return
+    def shortestFigureToBiggestStack(self, locationAndCount, player):
+        locations = set()
+        notFound = True
+        iterator = 0
+        needToStartFrom1 = {(locationAndCount[0], locationAndCount[1])}
+        needToStartFrom2 = set()
+        visited = {(locationAndCount[0], locationAndCount[1])}
+        while(notFound == True):
+            if(iterator != 0):
+                needToStartFrom1.clear()
+                needToStartFrom1.update(needToStartFrom2)
+                needToStartFrom2.clear()
+                iterator += 1
+            else:
+                iterator += 1
+
+            for node in needToStartFrom1:
+                #Gore levo
+                if(self.existsInTable(node[0] - 1, node[1] - 1)):
+                    if((node[0] - 1, node[1] - 1) not in visited):
+                        if self.bestFigureInStack(player, (node[0] - 1, node[1] - 1), locationAndCount):
+                            notFound = False, locations.add((node[0] - 1, node[1] - 1))
+                        visited.add((node[0] - 1, node[1] - 1))
+                        needToStartFrom2.add((node[0] - 1, node[1] - 1))
+
+                #Gore desno
+                if(self.existsInTable(node[0] - 1, node[1] + 1)):
+                    if((node[0] - 1, node[1] + 1) not in visited):
+                        if self.bestFigureInStack(player, (node[0] - 1, node[1] + 1), locationAndCount):
+                            notFound = False, locations.add((node[0] - 1, node[1] + 1))
+                        visited.add((node[0] - 1, node[1] + 1))
+                        needToStartFrom2.add((node[0] - 1, node[1] + 1))
+            
+                #Dole levo
+                if(self.existsInTable(node[0] + 1, node[1] - 1)):
+                    if((node[0] + 1, node[1] - 1) not in visited):
+                        if self.bestFigureInStack(player, (node[0] + 1, node[1] - 1), locationAndCount):
+                            notFound = False, locations.add((node[0] + 1, node[1] - 1))
+                        visited.add((node[0] + 1, node[1] - 1))
+                        needToStartFrom2.add((node[0] + 1, node[1] - 1))
+
+                #Dole desno
+                if(self.existsInTable(node[0] + 1, node[1] + 1)):
+                    if((node[0] + 1, node[1] + 1) not in visited):
+                        if self.bestFigureInStack(player, (node[0] + 1, node[1] + 1), locationAndCount):
+                            notFound = False, locations.add((node[0] + 1, node[1] + 1))
+                        visited.add((node[0] + 1, node[1] + 1))
+                        needToStartFrom2.add((node[0] + 1, node[1] + 1))
+        
+        return iterator
     
+    def bestFigureInStack(self, player, next_location, locationAndCount):
+        for i in range(9):
+            if self.matrix[next_location[0]][next_location[1]][i] == player:
+                if i < locationAndCount[2]:
+                    return True
+        return False
+
     def findTheDifference(self, table):
         locationSelf = ()
         locationTable = ()
@@ -492,20 +551,20 @@ class Table:
         if(self.existsInTable(locationSelf[0] - 1, locationSelf[1] - 1)):
             for i in range(9):
                 if self.matrix[locationSelf[0] - 1][locationSelf[1] - 1][i] != table.matrix[locationSelf[0] - 1][locationSelf[1] - 1][i]:
-                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'GL')
+                    return Move(locationSelf[0] - 1, locationSelf[1] - 1, i, 'DD')
 
         if(self.existsInTable(locationSelf[0] - 1, locationSelf[1] + 1)):
             for i in range(9):
                 if self.matrix[locationSelf[0] - 1][locationSelf[1] + 1][i] != table.matrix[locationSelf[0] - 1][locationSelf[1] + 1][i]:
-                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'GD')
+                    return Move(locationSelf[0] - 1, locationSelf[1] + 1, i, 'DL')
                     
         if(self.existsInTable(locationSelf[0] + 1, locationSelf[1] - 1)):
             for i in range(9):
                 if self.matrix[locationSelf[0] + 1][locationSelf[1] - 1][i] != table.matrix[locationSelf[0] + 1][locationSelf[1] - 1][i]:
-                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'DL')
+                    return Move(locationSelf[0] + 1, locationSelf[1] - 1, i, 'GD')
 
         if(self.existsInTable(locationSelf[0] + 1, locationSelf[1] + 1)):
             for i in range(9):
                 if self.matrix[locationSelf[0] + 1][locationSelf[1] + 1][i] != table.matrix[locationSelf[0] + 1][locationSelf[1] + 1][i]:
-                    return Move(locationSelf[0], locationSelf[1], locationSelf[2], 'DD')
+                    return Move(locationSelf[0] + 1, locationSelf[1] + 1, i, 'GL')
         

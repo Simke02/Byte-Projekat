@@ -63,7 +63,6 @@ class Game:
                 fig = game.table.figure1
             else:
                 fig = game.table.figure2
-            self.table.printingAllPossibleMoves(fig)
             print('Player ' + fig, end=" ")
             self.enter_move(fig)
              
@@ -76,7 +75,4 @@ class Game:
 game = Game()
 game.set_table()
 game.draw_table()
-#print(game.enter_move())
-m = Move(1, 1, 0, 'DD')
-#print(game.table.MoveToLocation(m))
 game.play()

@@ -156,14 +156,14 @@ class Table:
             if(move.column > 0):
                 if(self.matrix[move.row - 1][move.column - 1][0] != '.'):
                     empty = False
-            if(move.column < 7):
+            if(move.column < self.size - 1):
                 if(self.matrix[move.row - 1][move.column + 1][0] != '.'):
                     empty = False
-        if(move.row < 7):
+        if(move.row < self.size - 1):
             if(move.column > 0):
                 if(self.matrix[move.row + 1][move.column - 1][0] != '.'):
                     empty = False
-            if(move.column < 7):
+            if(move.column < self.size - 1):
                 if(self.matrix[move.row + 1][move.column + 1][0] != '.'):
                     empty = False
         return empty
